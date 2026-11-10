@@ -2,8 +2,8 @@
 
 API REST em **Python + Django** para uma startup de educação gerenciar **cursos, instrutores, alunos, módulos e inscrições**. Projeto Integrador Back-End.
 
-- **Autor:** Luis G. V. Silva (projeto individual)
-- **Repositório:** _cole aqui o link do GitHub_
+- **Autor:** Luís Flávio Viana Tavares (projeto individual)
+- **Repositório:** https://github.com/Ti-i/plataforma-cursos
 - **Documentação interativa (Swagger):** `http://127.0.0.1:8000/api/docs/` (com o servidor rodando)
 
 ## Sumário
