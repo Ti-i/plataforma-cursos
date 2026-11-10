@@ -1,0 +1,1299 @@
+openapi: 3.0.3
+info:
+  title: Plataforma de Cursos Online
+  version: 1.0.0
+  description: API REST do Projeto Integrador Back-End (Django + DRF + JWT).
+paths:
+  /api/alunos/:
+    get:
+      operationId: alunos_list
+      parameters:
+      - name: search
+        required: false
+        in: query
+        description: Um termo de busca.
+        schema:
+          type: string
+      tags:
+      - alunos
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Aluno'
+          description: ''
+    post:
+      operationId: alunos_create
+      tags:
+      - alunos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Aluno'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Aluno'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Aluno'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Aluno'
+          description: ''
+  /api/alunos/{id}/:
+    get:
+      operationId: alunos_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Um valor inteiro único que identifica este aluno.
+        required: true
+      tags:
+      - alunos
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Aluno'
+          description: ''
+    put:
+      operationId: alunos_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Um valor inteiro único que identifica este aluno.
+        required: true
+      tags:
+      - alunos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Aluno'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Aluno'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Aluno'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Aluno'
+          description: ''
+    patch:
+      operationId: alunos_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Um valor inteiro único que identifica este aluno.
+        required: true
+      tags:
+      - alunos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAluno'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAluno'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAluno'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Aluno'
+          description: ''
+    delete:
+      operationId: alunos_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Um valor inteiro único que identifica este aluno.
+        required: true
+      tags:
+      - alunos
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/auth/login/:
+    post:
+      operationId: auth_login_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenObtainPair'
+          description: ''
+  /api/auth/refresh/:
+    post:
+      operationId: auth_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/cursos/:
+    get:
+      operationId: cursos_list
+      parameters:
+      - in: query
+        name: ativo
+        schema:
+          type: boolean
+      - in: query
+        name: instrutor
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Um termo de busca.
+        schema:
+          type: string
+      tags:
+      - cursos
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Curso'
+          description: ''
+    post:
+      operationId: cursos_create
+      tags:
+      - cursos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Curso'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Curso'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Curso'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Curso'
+          description: ''
+  /api/cursos/{id}/:
+    get:
+      operationId: cursos_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Um valor inteiro único que identifica este curso.
+        required: true
+      tags:
+      - cursos
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Curso'
+          description: ''
+    put:
+      operationId: cursos_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Um valor inteiro único que identifica este curso.
+        required: true
+      tags:
+      - cursos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Curso'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Curso'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Curso'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Curso'
+          description: ''
+    patch:
+      operationId: cursos_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Um valor inteiro único que identifica este curso.
+        required: true
+      tags:
+      - cursos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCurso'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCurso'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCurso'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Curso'
+          description: ''
+    delete:
+      operationId: cursos_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Um valor inteiro único que identifica este curso.
+        required: true
+      tags:
+      - cursos
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/cursos/{id}/inscrever/:
+    post:
+      operationId: cursos_inscrever_create
+      description: Inscreve o aluno logado neste curso.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Um valor inteiro único que identifica este curso.
+        required: true
+      tags:
+      - cursos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Inscricao'
+          description: ''
+  /api/cursos/{id}/modulos/:
+    get:
+      operationId: cursos_modulos_list
+      description: 'Consulta 5: módulos do curso em ordem sequencial.'
+      parameters:
+      - in: query
+        name: ativo
+        schema:
+          type: boolean
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Um valor inteiro único que identifica este curso.
+        required: true
+      - in: query
+        name: instrutor
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Um termo de busca.
+        schema:
+          type: string
+      tags:
+      - cursos
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Modulo'
+          description: ''
+  /api/inscricoes/:
+    get:
+      operationId: inscricoes_list
+      parameters:
+      - in: query
+        name: aluno
+        schema:
+          type: integer
+      - in: query
+        name: concluido
+        schema:
+          type: boolean
+      - in: query
+        name: curso
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Um termo de busca.
+        schema:
+          type: string
+      tags:
+      - inscricoes
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Inscricao'
+          description: ''
+    post:
+      operationId: inscricoes_create
+      tags:
+      - inscricoes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Inscricao'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Inscricao'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Inscricao'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Inscricao'
+          description: ''
+  /api/inscricoes/{id}/:
+    get:
+      operationId: inscricoes_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Um valor inteiro único que identifica este inscrição.
+        required: true
+      tags:
+      - inscricoes
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Inscricao'
+          description: ''
+    put:
+      operationId: inscricoes_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Um valor inteiro único que identifica este inscrição.
+        required: true
+      tags:
+      - inscricoes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Inscricao'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Inscricao'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Inscricao'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Inscricao'
+          description: ''
+    patch:
+      operationId: inscricoes_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Um valor inteiro único que identifica este inscrição.
+        required: true
+      tags:
+      - inscricoes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedInscricao'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedInscricao'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedInscricao'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Inscricao'
+          description: ''
+    delete:
+      operationId: inscricoes_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Um valor inteiro único que identifica este inscrição.
+        required: true
+      tags:
+      - inscricoes
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/instrutores/:
+    get:
+      operationId: instrutores_list
+      parameters:
+      - name: search
+        required: false
+        in: query
+        description: Um termo de busca.
+        schema:
+          type: string
+      tags:
+      - instrutores
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Instrutor'
+          description: ''
+    post:
+      operationId: instrutores_create
+      tags:
+      - instrutores
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Instrutor'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Instrutor'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Instrutor'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Instrutor'
+          description: ''
+  /api/instrutores/{id}/:
+    get:
+      operationId: instrutores_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Um valor inteiro único que identifica este instrutor.
+        required: true
+      tags:
+      - instrutores
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Instrutor'
+          description: ''
+    put:
+      operationId: instrutores_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Um valor inteiro único que identifica este instrutor.
+        required: true
+      tags:
+      - instrutores
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Instrutor'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Instrutor'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Instrutor'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Instrutor'
+          description: ''
+    patch:
+      operationId: instrutores_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Um valor inteiro único que identifica este instrutor.
+        required: true
+      tags:
+      - instrutores
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedInstrutor'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedInstrutor'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedInstrutor'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Instrutor'
+          description: ''
+    delete:
+      operationId: instrutores_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Um valor inteiro único que identifica este instrutor.
+        required: true
+      tags:
+      - instrutores
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/modulos/:
+    get:
+      operationId: modulos_list
+      parameters:
+      - in: query
+        name: curso
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Um termo de busca.
+        schema:
+          type: string
+      tags:
+      - modulos
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Modulo'
+          description: ''
+    post:
+      operationId: modulos_create
+      tags:
+      - modulos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Modulo'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Modulo'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Modulo'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Modulo'
+          description: ''
+  /api/modulos/{id}/:
+    get:
+      operationId: modulos_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Um valor inteiro único que identifica este modulo.
+        required: true
+      tags:
+      - modulos
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Modulo'
+          description: ''
+    put:
+      operationId: modulos_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Um valor inteiro único que identifica este modulo.
+        required: true
+      tags:
+      - modulos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Modulo'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Modulo'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Modulo'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Modulo'
+          description: ''
+    patch:
+      operationId: modulos_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Um valor inteiro único que identifica este modulo.
+        required: true
+      tags:
+      - modulos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedModulo'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedModulo'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedModulo'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Modulo'
+          description: ''
+    delete:
+      operationId: modulos_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Um valor inteiro único que identifica este modulo.
+        required: true
+      tags:
+      - modulos
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/relatorios/alunos-multiplos-cursos/:
+    get:
+      operationId: relatorios_alunos_multiplos_cursos_list
+      description: 'Consulta 4: alunos inscritos em mais de um curso.'
+      tags:
+      - relatorios
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AlunoMultiplosCursosRelatorio'
+          description: ''
+  /api/relatorios/carga-horaria-instrutor/:
+    get:
+      operationId: relatorios_carga_horaria_instrutor_list
+      description: 'Consulta 3: nome do instrutor e carga horária total dos cursos
+        que ministra.'
+      tags:
+      - relatorios
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CargaHorariaRelatorio'
+          description: ''
+  /api/relatorios/cursos-concluintes/:
+    get:
+      operationId: relatorios_cursos_concluintes_list
+      description: 'Consulta 2: cursos com mais de N concluintes (padrão: 10).'
+      parameters:
+      - in: query
+        name: min
+        schema:
+          type: integer
+        description: Mínimo exclusivo de concluintes (padrão 10)
+      tags:
+      - relatorios
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ConcluintesRelatorio'
+          description: ''
+  /api/relatorios/inscricoes-cursos-ativos/:
+    get:
+      operationId: relatorios_inscricoes_cursos_ativos_list
+      description: 'Consulta 1: aluno, curso e data de inscrição de quem está em cursos
+        ativos.'
+      tags:
+      - relatorios
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InscricaoAtivaRelatorio'
+          description: ''
+components:
+  schemas:
+    Aluno:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nome:
+          type: string
+          maxLength: 120
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        data_cadastro:
+          type: string
+          format: date
+          readOnly: true
+        username:
+          type: string
+          writeOnly: true
+        password:
+          type: string
+          writeOnly: true
+          minLength: 8
+      required:
+      - data_cadastro
+      - email
+      - id
+      - nome
+    AlunoMultiplosCursosRelatorio:
+      type: object
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        total_cursos:
+          type: integer
+      required:
+      - id
+      - nome
+      - total_cursos
+    CargaHorariaRelatorio:
+      type: object
+      properties:
+        nome:
+          type: string
+        carga_total:
+          type: integer
+      required:
+      - carga_total
+      - nome
+    ConcluintesRelatorio:
+      type: object
+      properties:
+        id:
+          type: integer
+        titulo:
+          type: string
+        concluintes:
+          type: integer
+      required:
+      - concluintes
+      - id
+      - titulo
+    Curso:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        titulo:
+          type: string
+          maxLength: 150
+        descricao:
+          type: string
+        carga_horaria:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: Carga horária em horas
+        ativo:
+          type: boolean
+        instrutor:
+          type: integer
+        instrutor_nome:
+          type: string
+          readOnly: true
+      required:
+      - carga_horaria
+      - descricao
+      - id
+      - instrutor
+      - instrutor_nome
+      - titulo
+    Inscricao:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        aluno:
+          type: integer
+        aluno_nome:
+          type: string
+          readOnly: true
+        curso:
+          type: integer
+        curso_titulo:
+          type: string
+          readOnly: true
+        data_inscricao:
+          type: string
+          format: date
+          readOnly: true
+        concluido:
+          type: boolean
+        data_conclusao:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+      required:
+      - aluno
+      - aluno_nome
+      - curso
+      - curso_titulo
+      - data_conclusao
+      - data_inscricao
+      - id
+    InscricaoAtivaRelatorio:
+      type: object
+      properties:
+        aluno__nome:
+          type: string
+        curso__titulo:
+          type: string
+        data_inscricao:
+          type: string
+          format: date
+      required:
+      - aluno__nome
+      - curso__titulo
+      - data_inscricao
+    Instrutor:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nome:
+          type: string
+          maxLength: 120
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        bio:
+          type: string
+      required:
+      - email
+      - id
+      - nome
+    Modulo:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        curso:
+          type: integer
+        titulo:
+          type: string
+          maxLength: 150
+        ordem:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+      required:
+      - curso
+      - id
+      - ordem
+      - titulo
+    PatchedAluno:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nome:
+          type: string
+          maxLength: 120
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        data_cadastro:
+          type: string
+          format: date
+          readOnly: true
+        username:
+          type: string
+          writeOnly: true
+        password:
+          type: string
+          writeOnly: true
+          minLength: 8
+    PatchedCurso:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        titulo:
+          type: string
+          maxLength: 150
+        descricao:
+          type: string
+        carga_horaria:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: Carga horária em horas
+        ativo:
+          type: boolean
+        instrutor:
+          type: integer
+        instrutor_nome:
+          type: string
+          readOnly: true
+    PatchedInscricao:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        aluno:
+          type: integer
+        aluno_nome:
+          type: string
+          readOnly: true
+        curso:
+          type: integer
+        curso_titulo:
+          type: string
+          readOnly: true
+        data_inscricao:
+          type: string
+          format: date
+          readOnly: true
+        concluido:
+          type: boolean
+        data_conclusao:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+    PatchedInstrutor:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nome:
+          type: string
+          maxLength: 120
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        bio:
+          type: string
+    PatchedModulo:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        curso:
+          type: integer
+        titulo:
+          type: string
+          maxLength: 150
+        ordem:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+    TokenObtainPair:
+      type: object
+      properties:
+        username:
+          type: string
+          writeOnly: true
+        password:
+          type: string
+          writeOnly: true
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          readOnly: true
+      required:
+      - access
+      - password
+      - refresh
+      - username
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          writeOnly: true
+      required:
+      - access
+      - refresh
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
