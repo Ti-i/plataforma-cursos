@@ -3,11 +3,12 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Aluno, Curso, Inscricao, Instrutor, Modulo
+from .permissions import HasAlunoProfile, IsAdminOrReadOnly, IsSelfOrStaff
 from .serializers import (
     AlunoMultiplosCursosRelatorioSerializer, AlunoSerializer, CargaHorariaRelatorioSerializer,
     ConcluintesRelatorioSerializer, CursoSerializer, InscricaoAtivaRelatorioSerializer,
@@ -20,6 +21,7 @@ from .serializers import (
 class InstrutorViewSet(viewsets.ModelViewSet):
     queryset = Instrutor.objects.all()
     serializer_class = InstrutorSerializer
+    permission_classes = [IsAdminOrReadOnly]
     search_fields = ["nome", "email"]
 
     def destroy(self, request, *args, **kwargs):
@@ -35,12 +37,27 @@ class InstrutorViewSet(viewsets.ModelViewSet):
 class AlunoViewSet(viewsets.ModelViewSet):
     queryset = Aluno.objects.all()
     serializer_class = AlunoSerializer
+    permission_classes = [IsAuthenticated, IsSelfOrStaff]
     search_fields = ["nome", "email"]
+
+    def get_queryset(self):
+        if not self.request.user.is_authenticated:
+            return Aluno.objects.none()
+        if self.request.user.is_staff:
+            return Aluno.objects.all()
+        # não-staff só enxerga o próprio perfil (acesso a terceiros vira 404)
+        return Aluno.objects.filter(user=self.request.user)
+
+    def get_permissions(self):
+        if self.action in ("list", "create", "destroy"):
+            return [IsAdminUser()]
+        return super().get_permissions()
 
 
 class CursoViewSet(viewsets.ModelViewSet):
     queryset = Curso.objects.select_related("instrutor")
     serializer_class = CursoSerializer
+    permission_classes = [IsAdminOrReadOnly]
     filterset_fields = ["ativo", "instrutor"]
     search_fields = ["titulo", "descricao"]
 
@@ -72,6 +89,7 @@ class CursoViewSet(viewsets.ModelViewSet):
 class ModuloViewSet(viewsets.ModelViewSet):
     queryset = Modulo.objects.select_related("curso")
     serializer_class = ModuloSerializer
+    permission_classes = [IsAdminOrReadOnly]
     filterset_fields = ["curso"]
 
 
@@ -79,14 +97,29 @@ class InscricaoViewSet(viewsets.ModelViewSet):
     queryset = Inscricao.objects.select_related("aluno", "curso")
     serializer_class = InscricaoSerializer
     filterset_fields = ["aluno", "curso", "concluido"]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasAlunoProfile]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if self.request.user.is_staff:
+            return qs
+        aluno = getattr(self.request.user, "aluno", None)
+        if aluno is None:
+            return qs.none()
+        # não-staff só enxerga as próprias inscrições
+        return qs.filter(aluno=aluno)
+
+    def get_permissions(self):
+        if self.action in ("create", "update", "partial_update", "destroy"):
+            return [IsAdminUser()]
+        return super().get_permissions()
 
 
 # ------------------- Relatórios (consultas complexas) -------------------
 
 class InscricoesCursosAtivosView(APIView):
     """Consulta 1: aluno, curso e data de inscrição de quem está em cursos ativos."""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminUser]
 
     @extend_schema(responses=InscricaoAtivaRelatorioSerializer(many=True))
     def get(self, request):
@@ -99,7 +132,7 @@ class InscricoesCursosAtivosView(APIView):
 
 class CursosConcluintesView(APIView):
     """Consulta 2: cursos com mais de N concluintes (padrão: 10)."""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminUser]
 
     @extend_schema(
         parameters=[OpenApiParameter("min", OpenApiTypes.INT, description="Mínimo exclusivo de concluintes (padrão 10)")],
@@ -120,7 +153,7 @@ class CursosConcluintesView(APIView):
 
 class CargaHorariaInstrutorView(APIView):
     """Consulta 3: nome do instrutor e carga horária total dos cursos que ministra."""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminUser]
 
     @extend_schema(responses=CargaHorariaRelatorioSerializer(many=True))
     def get(self, request):
@@ -133,7 +166,7 @@ class CargaHorariaInstrutorView(APIView):
 
 class AlunosMultiplosCursosView(APIView):
     """Consulta 4: alunos inscritos em mais de um curso."""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminUser]
 
     @extend_schema(responses=AlunoMultiplosCursosRelatorioSerializer(many=True))
     def get(self, request):

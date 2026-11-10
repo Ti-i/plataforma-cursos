@@ -1,9 +1,10 @@
-from django.contrib.auth.models import User
+from django.contrib.auth.models import AnonymousUser, User
 from django.db import IntegrityError, transaction
 from rest_framework import status
-from rest_framework.test import APITestCase
+from rest_framework.test import APIRequestFactory, APITestCase
 
 from .models import Aluno, Curso, Inscricao, Instrutor, Modulo
+from .views import AlunoViewSet
 
 
 class BaseTestCase(APITestCase):
@@ -16,9 +17,15 @@ class BaseTestCase(APITestCase):
             titulo="Antigo", descricao="d", carga_horaria=10, ativo=False, instrutor=cls.instrutor)
         cls.user = User.objects.create_user("luis", "luis@x.com", "senha12345")
         cls.aluno = Aluno.objects.create(user=cls.user, nome="Luis", email="luis@x.com")
+        cls.staff = User.objects.create_user("staff", "staff@x.com", "senha12345", is_staff=True)
 
     def autenticar(self):
         resp = self.client.post("/api/auth/login/", {"username": "luis", "password": "senha12345"})
+        self.assertEqual(resp.status_code, 200)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {resp.data['access']}")
+
+    def autenticar_staff(self):
+        resp = self.client.post("/api/auth/login/", {"username": "staff", "password": "senha12345"})
         self.assertEqual(resp.status_code, 200)
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {resp.data['access']}")
 
@@ -38,6 +45,8 @@ class AutenticacaoTests(BaseTestCase):
         payload = {"titulo": "Novo", "descricao": "d", "carga_horaria": 10, "instrutor": self.instrutor.pk}
         self.assertEqual(self.client.post("/api/cursos/", payload).status_code, 401)
         self.autenticar()
+        self.assertEqual(self.client.post("/api/cursos/", payload).status_code, 403)
+        self.autenticar_staff()
         self.assertEqual(self.client.post("/api/cursos/", payload).status_code, 201)
 
     def test_relatorios_exigem_login(self):
@@ -46,7 +55,7 @@ class AutenticacaoTests(BaseTestCase):
 
 class CrudTests(BaseTestCase):
     def setUp(self):
-        self.autenticar()
+        self.autenticar_staff()
 
     def test_crud_completo_de_curso(self):
         payload = {"titulo": "Django", "descricao": "d", "carga_horaria": 30, "instrutor": self.instrutor.pk}
@@ -76,7 +85,7 @@ class CrudTests(BaseTestCase):
 
 class InscricaoTests(BaseTestCase):
     def setUp(self):
-        self.autenticar()
+        self.autenticar_staff()
 
     def test_inscricao_em_curso_ativo(self):
         resp = self.client.post("/api/inscricoes/", {"aluno": self.aluno.pk, "curso": self.curso.pk})
@@ -92,6 +101,7 @@ class InscricaoTests(BaseTestCase):
         self.assertEqual(resp.status_code, 400)
 
     def test_acao_inscrever_usa_aluno_logado(self):
+        self.autenticar()  # a ação é do aluno, não do staff
         resp = self.client.post(f"/api/cursos/{self.curso.pk}/inscrever/")
         self.assertEqual(resp.status_code, 201)
         self.assertEqual(resp.data["aluno"], self.aluno.pk)
@@ -112,7 +122,7 @@ class ModeloTests(BaseTestCase):
 
 class RelatoriosTests(BaseTestCase):
     def setUp(self):
-        self.autenticar()
+        self.autenticar_staff()
         # 12 alunos concluintes no curso principal
         for i in range(12):
             u = User.objects.create_user(f"u{i}", f"u{i}@x.com", "senha12345")
@@ -153,7 +163,7 @@ class RelatoriosTests(BaseTestCase):
 
 class InstrutorApiTests(BaseTestCase):
     def setUp(self):
-        self.autenticar()
+        self.autenticar_staff()
 
     def test_crud_completo_de_instrutor(self):
         # search_fields = ["nome", "email"]
@@ -184,7 +194,7 @@ class InstrutorApiTests(BaseTestCase):
 
 class AlunoApiTests(BaseTestCase):
     def setUp(self):
-        self.autenticar()
+        self.autenticar_staff()
 
     def test_lista_detalhe_atualizacao_e_exclusao(self):
         # search_fields = ["nome", "email"]
@@ -209,7 +219,7 @@ class AlunoApiTests(BaseTestCase):
 
 class CursoApiTests(BaseTestCase):
     def setUp(self):
-        self.autenticar()
+        self.autenticar_staff()
 
     def test_filtros_e_busca_de_cursos(self):
         # filterset_fields = ["ativo", "instrutor"]; search_fields = ["titulo", "descricao"]
@@ -250,7 +260,7 @@ class CursoApiTests(BaseTestCase):
 
 class ModuloApiTests(BaseTestCase):
     def setUp(self):
-        self.autenticar()
+        self.autenticar_staff()
 
     def test_crud_modulo_e_filtro_por_curso(self):
         criado = self.client.post("/api/modulos/", {
@@ -290,7 +300,7 @@ class ModuloApiTests(BaseTestCase):
 
 class InscricaoApiTests(BaseTestCase):
     def setUp(self):
-        self.autenticar()
+        self.autenticar_staff()
         self.inscricao_ativa = Inscricao.objects.create(aluno=self.aluno, curso=self.curso)
         self.inscricao_inativa = Inscricao.objects.create(aluno=self.aluno, curso=self.inativo)
 
@@ -373,3 +383,196 @@ class InscreverActionTests(BaseTestCase):
         segunda = self.client.post(f"/api/cursos/{self.curso.pk}/inscrever/")
         self.assertEqual(segunda.status_code, 400)
         self.assertEqual(Inscricao.objects.filter(aluno=self.aluno, curso=self.curso).count(), 1)
+
+    def test_staff_sem_perfil_aluno_recebe_403(self):
+        self.autenticar_staff()
+        resp = self.client.post(f"/api/cursos/{self.curso.pk}/inscrever/")
+        self.assertEqual(resp.status_code, 403)
+        self.assertFalse(Inscricao.objects.filter(curso=self.curso).exists())
+
+
+class VisitanteTests(BaseTestCase):
+    def test_visitante_nao_acessa_dados_de_alunos(self):
+        self.assertEqual(self.client.get("/api/alunos/").status_code, 401)
+        self.assertEqual(self.client.get(f"/api/alunos/{self.aluno.pk}/").status_code, 401)
+
+    def test_get_queryset_de_aluno_sem_usuario_autenticado_nao_quebra(self):
+        view = AlunoViewSet()
+        request = APIRequestFactory().get("/api/alunos/")
+        request.user = AnonymousUser()
+        view.request = request
+
+        queryset = view.get_queryset()
+
+        self.assertEqual(queryset.count(), 0)
+        self.assertFalse(queryset.exists())
+
+
+class AlunoPerfilProprioTests(BaseTestCase):
+    def setUp(self):
+        self.autenticar()
+
+    def test_aluno_acessa_e_edita_o_proprio_perfil(self):
+        detalhe = self.client.get(f"/api/alunos/{self.aluno.pk}/")
+        self.assertEqual(detalhe.status_code, 200)
+        self.assertEqual(detalhe.data["email"], "luis@x.com")
+
+        patch = self.client.patch(f"/api/alunos/{self.aluno.pk}/", {"nome": "Luis Editado"})
+        self.assertEqual(patch.status_code, 200)
+        self.assertEqual(Aluno.objects.get(pk=self.aluno.pk).nome, "Luis Editado")
+
+        put = self.client.put(f"/api/alunos/{self.aluno.pk}/", {"nome": "Luis Put", "email": "luis@x.com"})
+        self.assertEqual(put.status_code, 200)
+        self.assertEqual(Aluno.objects.get(pk=self.aluno.pk).nome, "Luis Put")
+
+    def test_aluno_troca_a_propria_senha(self):
+        resp = self.client.patch(f"/api/alunos/{self.aluno.pk}/", {"password": "novasenha123"})
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(User.objects.get(pk=self.user.pk).check_password("novasenha123"))
+        login = self.client.post("/api/auth/login/", {"username": "luis", "password": "novasenha123"})
+        self.assertEqual(login.status_code, 200)
+
+    def test_aluno_nao_lista_cria_nem_exclui_alunos(self):
+        self.assertEqual(self.client.get("/api/alunos/").status_code, 403)
+        self.assertEqual(self.client.post("/api/alunos/", {
+            "nome": "Novo", "email": "novo@x.com",
+            "username": "novo", "password": "senha12345"}).status_code, 403)
+        self.assertEqual(self.client.delete(f"/api/alunos/{self.aluno.pk}/").status_code, 403)
+
+        self.assertTrue(Aluno.objects.filter(pk=self.aluno.pk).exists())
+        self.assertFalse(User.objects.filter(username="novo").exists())
+        self.assertEqual(Aluno.objects.count(), 1)
+
+    def test_aluno_nao_acessa_nem_edita_outro_perfil(self):
+        outro_user = User.objects.create_user("outro", "outro@x.com", "senha12345")
+        outro = Aluno.objects.create(user=outro_user, nome="Outro", email="outro@x.com")
+
+        self.assertEqual(self.client.get(f"/api/alunos/{outro.pk}/").status_code, 404)
+        resp = self.client.patch(f"/api/alunos/{outro.pk}/", {
+            "nome": "Invadido", "email": "invadido@x.com", "password": "senha99999"})
+        self.assertEqual(resp.status_code, 404)
+        self.assertNotIn("password", resp.data)
+
+        outro.refresh_from_db()
+        outro_user.refresh_from_db()
+        self.assertEqual((outro.nome, outro.email), ("Outro", "outro@x.com"))
+        self.assertTrue(outro_user.check_password("senha12345"))
+        self.assertFalse(outro_user.check_password("senha99999"))
+
+    def test_aluno_nao_altera_vinculo_nem_privilegios(self):
+        outro_user = User.objects.create_user("outro2", "outro2@x.com", "senha12345")
+        resp = self.client.patch(f"/api/alunos/{self.aluno.pk}/", {
+            "user": outro_user.pk, "is_staff": True, "is_superuser": True})
+        self.assertEqual(resp.status_code, 200)
+
+        self.aluno.refresh_from_db()
+        self.user.refresh_from_db()
+        self.assertEqual(self.aluno.user_id, self.user.pk)
+        self.assertFalse(self.user.is_staff)
+        self.assertFalse(self.user.is_superuser)
+
+
+class CatalogoPermissoesTests(BaseTestCase):
+    def test_visitante_le_o_catalogo(self):
+        self.assertEqual(self.client.get("/api/instrutores/").status_code, 200)
+        self.assertEqual(self.client.get("/api/cursos/").status_code, 200)
+        self.assertEqual(self.client.get(f"/api/cursos/{self.curso.pk}/modulos/").status_code, 200)
+        self.assertEqual(self.client.get("/api/modulos/").status_code, 200)
+
+    def test_aluno_nao_escreve_no_catalogo(self):
+        self.autenticar()
+        modulo = Modulo.objects.create(curso=self.curso, titulo="M1", ordem=1)
+
+        with self.subTest(rota="instrutor"):
+            self.assertEqual(self.client.post("/api/instrutores/", {
+                "nome": "X", "email": "x@x.com"}).status_code, 403)
+            self.assertEqual(self.client.patch(f"/api/instrutores/{self.instrutor.pk}/", {
+                "nome": "X"}).status_code, 403)
+            self.assertEqual(self.client.delete(f"/api/instrutores/{self.instrutor.pk}/").status_code, 403)
+
+        with self.subTest(rota="curso"):
+            self.assertEqual(self.client.post("/api/cursos/", {
+                "titulo": "X", "descricao": "d", "carga_horaria": 1,
+                "instrutor": self.instrutor.pk}).status_code, 403)
+            self.assertEqual(self.client.patch(f"/api/cursos/{self.curso.pk}/", {"titulo": "X"}).status_code, 403)
+            self.assertEqual(self.client.delete(f"/api/cursos/{self.curso.pk}/").status_code, 403)
+
+        with self.subTest(rota="modulo"):
+            self.assertEqual(self.client.post("/api/modulos/", {
+                "curso": self.curso.pk, "titulo": "X", "ordem": 2}).status_code, 403)
+            self.assertEqual(self.client.patch(f"/api/modulos/{modulo.pk}/", {"titulo": "X"}).status_code, 403)
+            self.assertEqual(self.client.delete(f"/api/modulos/{modulo.pk}/").status_code, 403)
+
+        self.instrutor.refresh_from_db()
+        self.curso.refresh_from_db()
+        modulo.refresh_from_db()
+        self.assertEqual(self.instrutor.nome, "Ana")
+        self.assertEqual(self.curso.titulo, "Introdução a Bancos de Dados")
+        self.assertEqual(modulo.titulo, "M1")
+        self.assertEqual(Instrutor.objects.count(), 1)
+        self.assertEqual(Curso.objects.count(), 2)
+        self.assertEqual(Modulo.objects.count(), 1)
+
+
+class InscricaoAlunoTests(BaseTestCase):
+    def setUp(self):
+        self.autenticar()
+        self.outro_user = User.objects.create_user("outro", "outro@x.com", "senha12345")
+        self.outro = Aluno.objects.create(user=self.outro_user, nome="Outro", email="outro@x.com")
+        self.propria = Inscricao.objects.create(aluno=self.aluno, curso=self.curso)
+        self.de_terceiro = Inscricao.objects.create(aluno=self.outro, curso=self.curso)
+
+    def test_aluno_lista_e_detalha_apenas_as_proprias(self):
+        lista = self.client.get("/api/inscricoes/")
+        self.assertEqual(lista.status_code, 200)
+        self.assertEqual([i["id"] for i in lista.data], [self.propria.pk])
+
+        filtrada = self.client.get("/api/inscricoes/", {"aluno": self.outro.pk})
+        self.assertEqual(filtrada.data, [])
+
+        self.assertEqual(self.client.get(f"/api/inscricoes/{self.propria.pk}/").status_code, 200)
+        self.assertEqual(self.client.get(f"/api/inscricoes/{self.de_terceiro.pk}/").status_code, 404)
+
+    def test_aluno_nao_cria_altera_nem_exclui_inscricao_pelo_crud(self):
+        self.assertEqual(self.client.post("/api/inscricoes/", {
+            "aluno": self.aluno.pk, "curso": self.inativo.pk}).status_code, 403)
+        self.assertEqual(self.client.post("/api/inscricoes/", {
+            "aluno": self.outro.pk, "curso": self.inativo.pk}).status_code, 403)
+        self.assertEqual(self.client.patch(f"/api/inscricoes/{self.propria.pk}/", {
+            "concluido": True}).status_code, 403)
+        self.assertEqual(self.client.delete(f"/api/inscricoes/{self.propria.pk}/").status_code, 403)
+
+        self.assertEqual(Inscricao.objects.count(), 2)
+        self.propria.refresh_from_db()
+        self.assertFalse(self.propria.concluido)
+        self.assertIsNone(self.propria.data_conclusao)
+        self.assertFalse(Inscricao.objects.filter(aluno=self.aluno, curso=self.inativo).exists())
+
+    def test_aluno_nao_marca_a_propria_conclusao(self):
+        resp = self.client.patch(f"/api/inscricoes/{self.propria.pk}/", {"concluido": True})
+        self.assertEqual(resp.status_code, 403)
+        self.propria.refresh_from_db()
+        self.assertFalse(self.propria.concluido)
+        self.assertIsNone(self.propria.data_conclusao)
+
+    def test_usuario_sem_perfil_aluno_nao_lista_inscricoes(self):
+        User.objects.create_user("semperfil", "sp@x.com", "senha12345")
+        login = self.client.post("/api/auth/login/", {"username": "semperfil", "password": "senha12345"})
+        self.assertEqual(login.status_code, 200)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {login.data['access']}")
+
+        self.assertEqual(self.client.get("/api/inscricoes/").status_code, 403)
+        self.assertEqual(Inscricao.objects.count(), 2)
+
+
+class RelatoriosPermissoesTests(BaseTestCase):
+    def test_aluno_nao_acessa_relatorios(self):
+        self.autenticar()
+        for url in [
+            "/api/relatorios/inscricoes-cursos-ativos/",
+            "/api/relatorios/cursos-concluintes/",
+            "/api/relatorios/carga-horaria-instrutor/",
+            "/api/relatorios/alunos-multiplos-cursos/",
+        ]:
+            with self.subTest(url=url):
+                self.assertEqual(self.client.get(url).status_code, 403)
