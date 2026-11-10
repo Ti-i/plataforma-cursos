@@ -119,7 +119,13 @@ Relacionamentos implementados: **1:1** (Usuário–Aluno), **1:N** (Instrutor–
 python manage.py test
 ```
 
-20 testes cobrem autenticação, CRUD, regras de inscrição, constraints do banco e as cinco consultas do enunciado.
+33 testes cobrem, em resumo:
+
+- **autenticação e permissões**: login válido e inválido, leitura pública de cursos, escrita, relatórios e listagem de inscrições exigindo login, e bloqueio da ação `inscrever` para usuário sem perfil de aluno;
+- **operações CRUD**: criação, listagem, detalhe, atualização (PATCH e, nos cursos, PUT) e exclusão de instrutores, alunos, cursos, módulos e inscrições;
+- **filtros e busca**: `?search=` em instrutores, alunos e cursos; `?ativo=` e `?instrutor=` em cursos; `?curso=` em módulos; `?aluno=`, `?curso=` e `?concluido=` em inscrições;
+- **regras de inscrição e conclusão**: bloqueio de inscrição duplicada e em curso inativo, inscrição pela ação `inscrever` e preenchimento/limpeza da data de conclusão;
+- **integridade, exclusão em cascata e relatórios**: ordem de módulo única por curso, proteção de instrutor com cursos, remoção em cascata de módulos e inscrições ao excluir um curso, e as cinco consultas do enunciado.
 
 ## 9. Requisitos
 
