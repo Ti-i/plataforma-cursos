@@ -1,7 +1,7 @@
 from django.db.models import Count, Q, ProtectedError, Sum
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter, extend_schema
-from rest_framework import status, viewsets
+from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
+from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -44,7 +44,10 @@ class CursoViewSet(viewsets.ModelViewSet):
     filterset_fields = ["ativo", "instrutor"]
     search_fields = ["titulo", "descricao"]
 
-    @extend_schema(responses=ModuloSerializer(many=True))
+    @extend_schema(responses=inline_serializer(
+        name="ModulosDoCurso",
+        fields={"curso": serializers.CharField(), "modulos": ModuloSerializer(many=True)},
+    ))
     @action(detail=True, methods=["get"])
     def modulos(self, request, pk=None):
         """Consulta 5: módulos do curso em ordem sequencial."""
@@ -52,7 +55,7 @@ class CursoViewSet(viewsets.ModelViewSet):
         modulos = ModuloSerializer(curso.modulos.order_by("ordem"), many=True).data
         return Response({"curso": curso.titulo, "modulos": modulos})
 
-    @extend_schema(request=None, responses=InscricaoSerializer)
+    @extend_schema(request=None, responses={201: InscricaoSerializer})
     @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
     def inscrever(self, request, pk=None):
         """Inscreve o aluno logado neste curso."""

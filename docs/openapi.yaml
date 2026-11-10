@@ -382,7 +382,7 @@ paths:
       security:
       - jwtAuth: []
       responses:
-        '200':
+        '201':
           content:
             application/json:
               schema:
@@ -390,29 +390,15 @@ paths:
           description: ''
   /api/cursos/{id}/modulos/:
     get:
-      operationId: cursos_modulos_list
+      operationId: cursos_modulos_retrieve
       description: 'Consulta 5: módulos do curso em ordem sequencial.'
       parameters:
-      - in: query
-        name: ativo
-        schema:
-          type: boolean
       - in: path
         name: id
         schema:
           type: integer
         description: Um valor inteiro único que identifica este curso.
         required: true
-      - in: query
-        name: instrutor
-        schema:
-          type: integer
-      - name: search
-        required: false
-        in: query
-        description: Um termo de busca.
-        schema:
-          type: string
       tags:
       - cursos
       security:
@@ -423,9 +409,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Modulo'
+                $ref: '#/components/schemas/ModulosDoCurso'
           description: ''
   /api/inscricoes/:
     get:
@@ -1154,6 +1138,18 @@ components:
       - id
       - ordem
       - titulo
+    ModulosDoCurso:
+      type: object
+      properties:
+        curso:
+          type: string
+        modulos:
+          type: array
+          items:
+            $ref: '#/components/schemas/Modulo'
+      required:
+      - curso
+      - modulos
     PatchedAluno:
       type: object
       properties:

@@ -66,7 +66,7 @@ Fluxo de uma requisição: **URL → View/ViewSet → Serializer (validação) �
 
 ## 4. Instalação e execução
 
-Pré-requisito: Python 3.10 ou superior.
+Pré-requisito: Python 3.12 ou superior.
 
 ```bash
 git clone <URL-DO-REPOSITORIO>
