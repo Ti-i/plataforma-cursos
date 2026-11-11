@@ -1,6 +1,6 @@
 from django.db.models import Count, Q, ProtectedError, Sum
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view, inline_serializer
 from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
@@ -18,6 +18,10 @@ from .serializers import (
 
 # ----------------------------- CRUD -----------------------------
 
+@extend_schema_view(
+    list=extend_schema(auth=[]),
+    retrieve=extend_schema(auth=[]),
+)
 class InstrutorViewSet(viewsets.ModelViewSet):
     queryset = Instrutor.objects.all()
     serializer_class = InstrutorSerializer
@@ -54,6 +58,10 @@ class AlunoViewSet(viewsets.ModelViewSet):
         return super().get_permissions()
 
 
+@extend_schema_view(
+    list=extend_schema(auth=[]),
+    retrieve=extend_schema(auth=[]),
+)
 class CursoViewSet(viewsets.ModelViewSet):
     queryset = Curso.objects.select_related("instrutor")
     serializer_class = CursoSerializer
@@ -61,7 +69,7 @@ class CursoViewSet(viewsets.ModelViewSet):
     filterset_fields = ["ativo", "instrutor"]
     search_fields = ["titulo", "descricao"]
 
-    @extend_schema(responses=inline_serializer(
+    @extend_schema(auth=[], responses=inline_serializer(
         name="ModulosDoCurso",
         fields={"curso": serializers.CharField(), "modulos": ModuloSerializer(many=True)},
     ))
@@ -86,6 +94,10 @@ class CursoViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
+@extend_schema_view(
+    list=extend_schema(auth=[]),
+    retrieve=extend_schema(auth=[]),
+)
 class ModuloViewSet(viewsets.ModelViewSet):
     queryset = Modulo.objects.select_related("curso")
     serializer_class = ModuloSerializer
